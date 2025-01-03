@@ -50,7 +50,14 @@ export class PaymentsService {
       res.status(400).send(`Webhook Error: ${err.message}`);
       return;
     }
-    console.log({ event });
+
+    switch (event.type) {
+      case 'charge.succeeded':
+        console.log(JSON.stringify(event));
+      default:
+        console.log(`Event type ${event.type} not supported`);
+    }
+
     return res.status(200).send({ sig });
   }
 }
