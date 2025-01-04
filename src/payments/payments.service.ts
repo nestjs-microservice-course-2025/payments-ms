@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { envs } from 'src/config';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { envs, NATS_SERVICE } from 'src/config';
 import Stripe from 'stripe';
 import { PaymentSessionDto } from './dto/payment-session.dto';
 import { Request, Response } from 'express';
-import { url } from 'inspector';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class PaymentsService {
   private readonly stripe = new Stripe(envs.stripeSecret);
+  private readonly logger = new Logger(PaymentsService.name);
+
+  constructor(@Inject(NATS_SERVICE) private readonly natsClient: ClientProxy) {}
 
   async createPaymentSession(paymentSessionDto: PaymentSessionDto) {
     const { currency, items, orderId } = paymentSessionDto;
@@ -21,10 +24,14 @@ export class PaymentsService {
       },
       quantity: item.quantity,
     }));
+    const metadata = {
+      orderId: orderId,
+    };
     // return lineItems;
     const session = await this.stripe.checkout.sessions.create({
-      metadata: {
-        order_id: orderId,
+      metadata: metadata,
+      payment_intent_data: {
+        metadata: metadata,
       },
       currency: currency,
       line_items: lineItems,
@@ -60,15 +67,26 @@ export class PaymentsService {
     switch (event.type) {
       case 'charge.succeeded':
         const chargeSucceeded = event.data.object;
-        console.log(JSON.stringify(chargeSucceeded));
-        break;
-      case 'checkout.session.completed':
-        console.log({
-          metadata: JSON.stringify(event.data.object.metadata),
-        });
+        const payload = {
+          stripePaymentId: chargeSucceeded.id,
+          orderId: chargeSucceeded.metadata.orderId,
+          receiptUrl: chargeSucceeded.receipt_url,
+        };
+        // this.logger.log(
+        //   JSON.stringify({
+        //     stripeEvent: event,
+        //   }),
+        // );
+
+        // this.logger.log(
+        //   JSON.stringify({
+        //     payload,
+        //   }),
+        // );
+        this.natsClient.emit('payment.succeeded', payload);
         break;
       default:
-        console.log(`Event type ${event.type} not supported`);
+        this.logger.log(`Event type ${event.type} not supported`);
         break;
     }
 
