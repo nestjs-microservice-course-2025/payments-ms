@@ -5,6 +5,8 @@ interface EnvVars {
   PORT: number;
   STRIPE_SECRET: string;
   STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_SUCCESS_URL: string;
+  STRIPE_CANCEL_URL: string;
 }
 
 const envsSchema = joi
@@ -12,6 +14,8 @@ const envsSchema = joi
     PORT: joi.number().required(),
     STRIPE_SECRET: joi.string().required(),
     STRIPE_WEBHOOK_SECRET: joi.string().required(),
+    STRIPE_SUCCESS_URL: joi.string().required(),
+    STRIPE_CANCEL_URL: joi.string().required(),
   })
   .unknown(true);
 
@@ -27,4 +31,6 @@ export const envs = {
   port: envVars.PORT,
   stripeSecret: envVars.STRIPE_SECRET,
   stripeWebhookSecret: envVars.STRIPE_WEBHOOK_SECRET,
+  stripeSuccessUrl: envVars.STRIPE_SUCCESS_URL,
+  stripeCancelUrl: envVars.STRIPE_CANCEL_URL,
 };
