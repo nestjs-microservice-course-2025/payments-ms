@@ -9,7 +9,7 @@ export class PaymentsService {
   private readonly stripe = new Stripe(envs.stripeSecret);
 
   async createPaymentSession(paymentSessionDto: PaymentSessionDto) {
-    const { currency, items } = paymentSessionDto;
+    const { currency, items, orderId } = paymentSessionDto;
     const lineItems = items.map((item) => ({
       price_data: {
         currency,
@@ -23,7 +23,7 @@ export class PaymentsService {
     // return lineItems;
     const session = await this.stripe.checkout.sessions.create({
       metadata: {
-        order_id: 'ord_1I5x0o2eZvKYlo2C',
+        order_id: orderId,
       },
       currency: currency,
       line_items: lineItems,
@@ -53,9 +53,17 @@ export class PaymentsService {
 
     switch (event.type) {
       case 'charge.succeeded':
-        console.log(JSON.stringify(event));
+        const chargeSucceeded = event.data.object;
+        console.log(JSON.stringify(chargeSucceeded));
+        break;
+      case 'checkout.session.completed':
+        console.log({
+          metadata: JSON.stringify(event.data.object.metadata),
+        });
+        break;
       default:
         console.log(`Event type ${event.type} not supported`);
+        break;
     }
 
     return res.status(200).send({ sig });
