@@ -27,6 +27,7 @@ async function bootstrap() {
   await app.startAllMicroservices();
   await app.listen(envs.port ?? 3000);
 
+  logger.log(`Health check running on payments-ms`);
   logger.log(
     `Payments Microservice is running on port ${envs.port} with hybrid transport layer [HTTP, Nats]`,
   );
