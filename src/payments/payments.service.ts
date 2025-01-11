@@ -60,7 +60,7 @@ export class PaymentsService {
         endpointSecret,
       );
     } catch (err) {
-      res.status(400).send(`Webhook Error: ${err.message}`);
+      res.status(400).send(`Payments Webhook Error: ${err.message}`);
       return;
     }
 
